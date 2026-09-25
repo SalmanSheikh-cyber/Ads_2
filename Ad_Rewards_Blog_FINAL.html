@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+  <title>Ad Rewards Mini App</title>
+
+  <!-- Monetag Zone: 11867796 -->
+  <script src='//libtl.com/sdk.js' data-zone='11867796' data-sdk='show_11867796'></script>
+  <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#07111f;color:#f8fafc}
+    button,input,select,textarea{font:inherit}button{cursor:pointer}
+    .app{max-width:520px;margin:auto;min-height:100vh;background:linear-gradient(180deg,#0b1830,#07111f)}
+    header{position:sticky;top:0;z-index:5;padding:14px 16px;background:rgba(7,17,31,.94);backdrop-filter:blur(12px);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #20304a}
+    .brand{font-weight:800}.adminBtn{border:1px solid #315078;background:#10213a;color:#fff;border-radius:12px;padding:8px 11px}
+    main{padding:16px 16px 88px}.card{background:#0d1d34;border:1px solid #223754;border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 10px 30px #0002}
+    .balance{font-size:34px;font-weight:900;margin:6px 0}.muted{color:#9fb0c8;font-size:13px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .stat{padding:13px;background:#10243f;border-radius:14px}.stat b{font-size:20px;display:block;margin-top:4px}
+    .primary,.success,.danger,.secondary{width:100%;border:0;border-radius:13px;padding:12px;font-weight:800}
+    .primary{background:#28a8ff;color:#03111e}.success{background:#2ed47a;color:#04150d}.danger{background:#ff5c70;color:#22060a}.secondary{background:#1a2c46;color:#fff}
+    .task{display:flex;gap:12px;align-items:center}.icon{width:44px;height:44px;border-radius:13px;background:#16375c;display:grid;place-items:center;font-size:21px}
+    .task .grow{flex:1}.task button{width:auto;padding:9px 12px}.row{display:flex;gap:8px}.row>*{flex:1}
+    nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);display:grid;grid-template-columns:repeat(5,1fr);background:#091525;border-top:1px solid #223754;z-index:10}
+    nav button{background:none;border:0;color:#91a4bf;padding:11px 4px;font-size:12px}nav button.active{color:#41b5ff}
+    .view{display:none}.view.active{display:block}.badge{display:inline-block;padding:5px 9px;border-radius:99px;font-size:11px;font-weight:800;background:#263b58}
+    .modal{position:fixed;inset:0;background:#0009;z-index:30;display:none;align-items:flex-end}.modal.open{display:flex}
+    .sheet{width:min(520px,100%);margin:auto;background:#0b1830;border:1px solid #29415f;border-radius:22px 22px 0 0;padding:18px;max-height:92vh;overflow:auto}
+    label{display:block;color:#a9bad0;font-size:12px;margin:12px 0 6px}input,select,textarea{width:100%;background:#081426;border:1px solid #2a405d;color:#fff;border-radius:11px;padding:11px;outline:none}textarea{min-height:90px}
+    .close{float:right;background:none;border:0;color:#9fb0c8;font-size:22px}.sectionTitle{margin:20px 0 10px;font-size:17px}
+    .adminTab{display:none}.adminTab.active{display:block}.list{display:grid;gap:9px}.item{background:#0e213b;border:1px solid #213a59;border-radius:13px;padding:12px}
+    .small{font-size:12px}.toast{position:fixed;left:50%;bottom:78px;transform:translateX(-50%);background:#142945;color:#fff;padding:10px 14px;border-radius:12px;display:none;z-index:50}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">💎 Ad Rewards</div>
+    <button class="adminBtn" onclick="openAdminLogin()">Admin Login</button>
+  </header>
+
+  <main>
+    <section id="home" class="view active">
+      <div class="card">
+        <div class="muted">Your Balance</div>
+        <div class="balance">৳<span id="balance">0.00</span></div>
+        <div class="muted">Available for withdrawal</div>
+      </div>
+      <div class="grid">
+        <div class="stat"><span class="muted">Tasks</span><b id="taskCount">0</b></div>
+        <div class="stat"><span class="muted">Referrals</span><b id="refCount">0</b></div>
+      </div>
+      <div class="card">
+        <h3>🎬 Watch & Earn</h3>
+        <p class="muted">Monetag rewarded ad চালু করতে নিচের বাটনে চাপুন।</p>
+        <button class="primary" onclick="watchAd()">▶ Watch Video</button>
+        <p id="adStatus" class="muted"></p>
+      </div>
+      <div class="card">
+        <h3>📢 AdsGram Ad</h3>
+        <p class="muted">AdsGram rewarded ad চালু করতে নিচের বাটনে চাপুন।</p>
+        <button class="primary" onclick="watchAdsGramAd()">▶ Watch AdsGram</button>
+        <p id="adsgramStatus" class="muted"></p>
+      </div>
+    </section>
+
+    <section id="tasks" class="view">
+      <h2>📋 Tasks</h2><div id="taskList" class="list"></div>
+    </section>
+
+    <section id="withdraw" class="view">
+      <h2>💸 Withdraw</h2>
+      <div class="card">
+        <div class="muted">Balance</div><div class="balance">৳<span id="wBalance">0.00</span></div>
+        <label>Method</label><select id="wMethod"><option>bKash</option><option>Nagad</option><option>Rocket</option></select>
+        <label>Account Number</label><input id="wNumber" placeholder="01XXXXXXXXX">
+        <label>Amount</label><input id="wAmount" type="number" min="1" placeholder="100">
+        <button class="primary" onclick="requestWithdraw()">Request Withdrawal</button>
+      </div>
+      <div class="card"><h3>Withdrawal History</h3><div id="userWithdrawals" class="list"></div></div>
+    </section>
+
+    <section id="blog" class="view">
+      <h2>📰 Blog</h2>
+      <div class="card"><input id="blogSearch" placeholder="🔍 Search posts..." oninput="renderBlog()"></div>
+      <div id="blogList" class="list"></div>
+    </section>
+
+    <section id="profile" class="view">
+      <h2>👤 Profile</h2>
+      <div class="card">
+        <p><b>User ID:</b> <span id="uid"></span></p>
+        <p><b>Status:</b> <span id="userStatus" class="badge">Active</span></p>
+        <p class="muted">এই single-file demo-তে data localStorage-এ রাখা হচ্ছে। Production app-এর জন্য backend/database লাগবে।</p>
+      </div>
+    </section>
+  </main>
+
+  <nav>
+    <button class="active" onclick="showView('home',this)">🏠<br>Home</button>
+    <button onclick="showView('tasks',this)">📋<br>Tasks</button>
+    <button onclick="showView('withdraw',this)">💸<br>Withdraw</button>
+    <button onclick="showView('blog',this)">📰<br>Blog</button>
+    <button onclick="showView('profile',this)">👤<br>Profile</button>
+  </nav>
+</div>
+
+<div id="loginModal" class="modal">
+  <div class="sheet">
+    <button class="close" onclick="closeModal('loginModal')">×</button>
+    <h2>🔐 Admin Login</h2>
+    <label>Username</label><input id="adminUser" value="Admin Sheikh">
+    <label>Password</label><input id="adminPass" type="password" placeholder="Password">
+    <button class="primary" onclick="adminLogin()">Login</button>
+    <p id="loginMsg" class="muted"></p>
+  </div>
+</div>
+
+<div id="adminModal" class="modal">
+  <div class="sheet">
+    <button class="close" onclick="closeModal('adminModal')">×</button>
+    <h2>⚙️ Admin Panel</h2>
+    <div class="row">
+      <button class="secondary" onclick="adminTab('dash')">Dashboard</button>
+      <button class="secondary" onclick="adminTab('tasksTab')">Tasks</button>
+      <button class="secondary" onclick="adminTab('adsTab')">Ads</button>
+      <button class="secondary" onclick="adminTab('securityTab')">Security</button>
+      <button class="secondary" onclick="adminTab('blogTab')">Blog</button>
+    </div>
+    <div id="dash" class="adminTab active">
+      <div class="grid" style="margin-top:12px">
+        <div class="stat">Users<b id="aUsers">1</b></div>
+        <div class="stat">Pending<b id="aPending">0</b></div>
+        <div class="stat">Blocked<b id="aBlocked">0</b></div>
+        <div class="stat">Balance<b>৳<span id="aBalance">0</span></b></div>
+      </div>
+      <h3 class="sectionTitle">Withdrawal Requests</h3>
+      <div id="adminWithdrawals" class="list"></div>
+      <h3 class="sectionTitle">User Control</h3>
+      <div class="card">
+        <p><b>Demo User:</b> <span id="adminUserId"></span></p>
+        <button class="danger" onclick="toggleBlock()">Block / Unblock User</button>
+      </div>
+    </div>
+
+    <div id="tasksTab" class="adminTab">
+      <h3>Add Task</h3>
+      <label>Task Name</label><input id="newTaskName" placeholder="Join Telegram Channel">
+      <label>Reward (৳)</label><input id="newTaskReward" type="number" value="5">
+      <label>Task URL</label><input id="newTaskUrl" placeholder="https://t.me/...">
+      <button class="success" onclick="addTask()">+ Add Task</button>
+      <h3 class="sectionTitle">Current Tasks</h3><div id="adminTasks" class="list"></div>
+    </div>
+
+    <div id="adsTab" class="adminTab">
+      <h3>📢 Monetag Ads</h3>
+      <div class="card">
+        <label>Monetag Status</label><select id="monetagEnabled"><option value="1">Enabled</option><option value="0">Disabled</option></select>
+        <label>Monetag Zone ID</label><input id="zoneId" value="11867796">
+        <label>Monetag Reward (৳)</label><input id="adReward" type="number" min="0" step="0.01" value="2">
+        <label>Monetag Daily Limit</label><input id="adLimit" type="number" min="1" value="20">
+        <button class="success" onclick="saveMonetagSettings()">Save Monetag Settings</button>
+        <button class="secondary" style="margin-top:8px" onclick="testAd()">Test Monetag</button>
+      </div>
+      <h3>📢 AdsGram Ads</h3>
+      <div class="card">
+        <label>AdsGram Status</label><select id="adsgramEnabled"><option value="1">Enabled</option><option value="0">Disabled</option></select>
+        <label>AdsGram Block ID</label><input id="adsgramBlockId" value="" placeholder="আপনার AdsGram Block ID">
+        <label>AdsGram Reward (৳)</label><input id="adsgramReward" type="number" min="0" step="0.01" value="2">
+        <label>AdsGram Daily Limit</label><input id="adsgramLimit" type="number" min="1" value="20">
+        <button class="success" onclick="saveAdsGramSettings()">Save AdsGram Settings</button>
+        <button class="secondary" style="margin-top:8px" onclick="testAdsGramAd()">Test AdsGram</button>
+      </div>
+      <p class="muted">Monetag ও AdsGram সম্পূর্ণ আলাদা configuration, reward এবং daily limit দিয়ে নিয়ন্ত্রণ করা যাবে।</p>
+    </div>
+    <div id="blogTab" class="adminTab">
+      <h3>📰 Blog Manager</h3>
+      <div class="card">
+        <label>Post Title</label><input id="blogTitle" placeholder="আজকের নতুন খবর">
+        <label>Image URL (optional)</label><input id="blogImage" placeholder="https://...">
+        <label>Post Content</label><textarea id="blogContent" placeholder="আপনার পোস্ট লিখুন..."></textarea>
+        <button class="success" onclick="addBlogPost()">+ Add Post</button>
+      </div>
+      <h3 class="sectionTitle">Current Posts</h3><div id="adminBlogList" class="list"></div>
+    </div>
+
+    <div id="securityTab" class="adminTab">
+      <h3>🔐 Admin Password</h3>
+      <div class="card">
+        <label>Current Password</label><input id="currentAdminPass" type="password">
+        <label>New Password</label><input id="newAdminPass" type="password">
+        <label>Confirm New Password</label><input id="confirmAdminPass" type="password">
+        <button class="success" onclick="changeAdminPassword()">Change Password</button>
+        <p id="passwordMsg" class="muted"></p>
+      </div>
+      <p class="muted">এটি single-file demo; password localStorage-এ থাকে। Production app-এ backend authentication ব্যবহার করুন।</p>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const KEY='ad_rewards_demo_v2';
+let state=JSON.parse(localStorage.getItem(KEY)||'null')||{
+  balance:25,blocked:false,referrals:0,tasks:[
+    {id:1,name:'Join Telegram Channel',reward:5,url:'https://t.me/',done:false},
+    {id:2,name:'Visit Sponsor',reward:3,url:'https://example.com',done:false}
+  ],withdrawals:[],adSettings:{monetag:{enabled:true,zone:'11867796',reward:2,limit:20,watched:0},adsgram:{enabled:true,blockId:'',reward:2,limit:20,watched:0}},admin:{username:'Admin Sheikh',password:'123456'}
+};
+function normalizeState(){
+  if(!state.adSettings.monetag){state.adSettings.monetag={enabled:true,zone:state.adSettings.zone||'11867796',reward:Number(state.adSettings.reward??2),limit:Number(state.adSettings.limit??20),watched:Number(state.adSettings.watched??0)}}
+  if(!state.adSettings.adsgram){state.adSettings.adsgram={enabled:true,blockId:state.adSettings.adsgramBlockId||'',reward:Number(state.adSettings.adsgramReward??2),limit:20,watched:Number(state.adSettings.adsgramWatched??0)}}
+  if(!state.admin) state.admin={username:'Admin Sheikh',password:'123456'};
+}
+normalizeState();
+if(!Array.isArray(state.blogPosts)) state.blogPosts=[{id:1,title:'Welcome to the Blog',image:'',content:'এখানে আপনার অ্যাপের নতুন খবর, আপডেট এবং ঘোষণা প্রকাশ করতে পারবেন।',date:new Date().toISOString()}];
+
+function save(){localStorage.setItem(KEY,JSON.stringify(state));render();}
+function money(n){return Number(n||0).toFixed(2)}
+function toast(t){let x=document.getElementById('toast');x.textContent=t;x.style.display='block';setTimeout(()=>x.style.display='none',2200)}
+function showView(id,btn){
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');render();
+}
+function render(){
+  document.getElementById('balance').textContent=money(state.balance);
+  document.getElementById('wBalance').textContent=money(state.balance);
+  document.getElementById('refCount').textContent=state.referrals;
+  document.getElementById('taskCount').textContent=state.tasks.filter(t=>!t.done).length;
+  document.getElementById('uid').textContent=localStorage.getItem('demo_uid')||(localStorage.setItem('demo_uid','U'+Math.floor(Math.random()*900000+100000)),'U'+Math.floor(Math.random()*900000+100000));
+  document.getElementById('userStatus').textContent=state.blocked?'Blocked':'Active';
+  document.getElementById('userStatus').style.background=state.blocked?'#632936':'#194d39';
+  document.getElementById('taskList').innerHTML=state.tasks.map(t=>`<div class="card task"><div class="icon">🎯</div><div class="grow"><b>${esc(t.name)}</b><div class="muted">Reward ৳${money(t.reward)}</div></div><button class="${t.done?'secondary':'primary'}" onclick="doTask(${t.id})">${t.done?'Done':'Start'}</button></div>`).join('');
+  document.getElementById('userWithdrawals').innerHTML=state.withdrawals.map(w=>`<div class="item"><b>৳${money(w.amount)}</b> • ${w.method}<br><span class="muted">${w.number} • ${w.status}</span></div>`).join('')||'<p class="muted">No requests yet.</p>';
+  document.getElementById('adminTasks').innerHTML=state.tasks.map(t=>`<div class="item"><b>${esc(t.name)}</b> — ৳${money(t.reward)}<button class="danger" style="margin-top:7px" onclick="deleteTask(${t.id})">Delete</button></div>`).join('');
+  document.getElementById('adminWithdrawals').innerHTML=state.withdrawals.map((w,i)=>`<div class="item"><b>৳${money(w.amount)}</b> • ${w.method}<br>${w.number}<br><span class="badge">${w.status}</span><div class="row" style="margin-top:8px"><button class="success" onclick="setWithdraw(${i},'Success')">Success</button><button class="danger" onclick="setWithdraw(${i},'Rejected')">Reject</button><button class="secondary" onclick="setWithdraw(${i},'Cancelled')">Cancel</button></div></div>`).join('')||'<p class="muted">No withdrawal requests.</p>';
+  document.getElementById('aPending').textContent=state.withdrawals.filter(w=>w.status==='Pending').length;
+  document.getElementById('aBlocked').textContent=state.blocked?1:0;
+  document.getElementById('aBalance').textContent=money(state.balance);
+  document.getElementById('adminUserId').textContent=document.getElementById('uid').textContent;
+  renderBlog();
+  renderAdminBlog();
+  const m=state.adSettings.monetag,a=state.adSettings.adsgram;
+  const me=document.getElementById('monetagEnabled');if(me)me.value=m.enabled?'1':'0';
+  const z=document.getElementById('zoneId');if(z)z.value=m.zone||'11867796';
+  const mr=document.getElementById('adReward');if(mr)mr.value=m.reward??2;
+  const ml=document.getElementById('adLimit');if(ml)ml.value=m.limit??20;
+  const ae=document.getElementById('adsgramEnabled');if(ae)ae.value=a.enabled?'1':'0';
+  const ab=document.getElementById('adsgramBlockId');if(ab)ab.value=a.blockId||'';
+  const ar=document.getElementById('adsgramReward');if(ar)ar.value=a.reward??2;
+  const al=document.getElementById('adsgramLimit');if(al)al.value=a.limit??20;
+}
+function renderBlog(){
+  const box=document.getElementById('blogList'); if(!box)return;
+  const q=(document.getElementById('blogSearch')?.value||'').toLowerCase();
+  const posts=(state.blogPosts||[]).filter(p=>(p.title+' '+p.content).toLowerCase().includes(q));
+  box.innerHTML=posts.map(p=>`<div class="card">${p.image?`<img src="${esc(p.image)}" style="width:100%;max-height:220px;object-fit:cover;border-radius:14px;margin-bottom:10px" onerror="this.style.display='none'">`:''}<h3>${esc(p.title)}</h3><div class="muted">${new Date(p.date).toLocaleDateString()}</div><p class="muted" style="white-space:pre-wrap">${esc(p.content)}</p></div>`).join('')||'<p class="muted">No posts found.</p>';
+}
+function renderAdminBlog(){
+  const box=document.getElementById('adminBlogList'); if(!box)return;
+  box.innerHTML=(state.blogPosts||[]).map(p=>`<div class="item"><b>${esc(p.title)}</b><div class="muted">${new Date(p.date).toLocaleDateString()}</div><button class="danger" style="margin-top:7px" onclick="deleteBlogPost(${p.id})">Delete</button></div>`).join('')||'<p class="muted">No posts.</p>';
+}
+function addBlogPost(){
+  const title=document.getElementById('blogTitle').value.trim(), image=document.getElementById('blogImage').value.trim(), content=document.getElementById('blogContent').value.trim();
+  if(!title||!content)return toast('Title and content দিন');
+  state.blogPosts.unshift({id:Date.now(),title,image,content,date:new Date().toISOString()}); save();
+  document.getElementById('blogTitle').value=''; document.getElementById('blogImage').value=''; document.getElementById('blogContent').value=''; toast('Blog post added');
+}
+function deleteBlogPost(id){state.blogPosts=state.blogPosts.filter(p=>p.id!==id);save();toast('Blog post deleted')}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function doTask(id){
+  if(state.blocked)return toast('User is blocked');
+  let t=state.tasks.find(x=>x.id===id);if(!t||t.done)return;
+  t.done=true;state.balance+=Number(t.reward);save();toast('Task completed +৳'+t.reward);
+  if(t.url && t.url!=='https://example.com') window.open(t.url,'_blank');
+}
+async function watchAd(){
+  if(state.blocked)return toast('User is blocked');
+  let s=state.adSettings.monetag;
+  if(!s.enabled)return toast('Monetag ads are disabled');
+  if(s.watched>=s.limit)return toast('Daily video limit reached');
+  let fn=window.show_11867796;
+  if(typeof fn!=='function'){
+    document.getElementById('adStatus').textContent='Monetag SDK এখনও ready নয়। HTTPS Telegram Mini App থেকে আবার চেষ্টা করুন।';
+    return toast('Monetag SDK not ready');
+  }
+  document.getElementById('adStatus').textContent='Loading Monetag ad...';
+  try{
+    await fn();
+    s.watched++;
+    state.balance+=Number(s.reward);
+    save();
+    document.getElementById('adStatus').textContent='Ad session completed. Reward added.';
+    toast('Ad reward +৳'+money(s.reward));
+  }catch(e){
+    document.getElementById('adStatus').textContent='Ad could not be opened.';
+    toast('Monetag ad failed');
+  }
+}
+async function watchAdsGramAd(){
+  if(state.blocked)return toast('User is blocked');
+  const s=state.adSettings.adsgram;
+  if(!s.enabled)return toast('AdsGram ads are disabled');
+  if(s.watched>=s.limit)return toast('AdsGram daily ad limit reached');
+  const blockId=(s.blockId||'').trim();
+  if(!blockId){
+    document.getElementById('adsgramStatus').textContent='Admin Panel থেকে AdsGram Block ID সেট করুন।';
+    return toast('AdsGram Block ID missing');
+  }
+  if(!window.Adsgram){
+    document.getElementById('adsgramStatus').textContent='AdsGram SDK এখনও ready নয়। Telegram Mini App থেকে আবার চেষ্টা করুন।';
+    return toast('AdsGram SDK not ready');
+  }
+  document.getElementById('adsgramStatus').textContent='Loading AdsGram ad...';
+  try{
+    const controller=window.Adsgram.init({blockId:blockId});
+    const result=await controller.show();
+    if(result && result.done===false) throw result;
+    s.watched++;
+    state.balance+=Number(s.reward||0);
+    save();
+    document.getElementById('adsgramStatus').textContent='AdsGram ad completed. Reward added.';
+    toast('AdsGram reward +৳'+money(s.reward));
+  }catch(e){
+    document.getElementById('adsgramStatus').textContent='AdsGram ad could not be completed.';
+    toast('AdsGram ad failed or skipped');
+  }
+}
+function testAdsGramAd(){watchAdsGramAd()}
+
+function requestWithdraw(){
+  if(state.blocked)return toast('User is blocked');
+  let amount=Number(document.getElementById('wAmount').value),number=document.getElementById('wNumber').value.trim(),method=document.getElementById('wMethod').value;
+  if(!number||!amount||amount<=0)return toast('সব তথ্য দিন');
+  if(amount>state.balance)return toast('Insufficient balance');
+  state.balance-=amount;state.withdrawals.unshift({amount,number,method,status:'Pending',time:new Date().toISOString()});save();toast('Withdrawal Pending');
+}
+function setWithdraw(i,status){if(!state.withdrawals[i])return;state.withdrawals[i].status=status;save();toast(status)}
+function toggleBlock(){state.blocked=!state.blocked;save();toast(state.blocked?'User Blocked':'User Unblocked')}
+function addTask(){
+  let name=document.getElementById('newTaskName').value.trim(),reward=Number(document.getElementById('newTaskReward').value),url=document.getElementById('newTaskUrl').value.trim()||'#';
+  if(!name||reward<=0)return toast('Task information দিন');
+  state.tasks.push({id:Date.now(),name,reward,url,done:false});save();toast('Task added');
+}
+function deleteTask(id){state.tasks=state.tasks.filter(t=>t.id!==id);save();toast('Task deleted')}
+function saveMonetagSettings(){const m=state.adSettings.monetag;m.enabled=document.getElementById('monetagEnabled').value==='1';m.zone=document.getElementById('zoneId').value.trim()||'11867796';m.reward=Math.max(0,Number(document.getElementById('adReward').value)||0);m.limit=Math.max(1,Number(document.getElementById('adLimit').value)||20);save();toast('Monetag settings saved')}
+function saveAdsGramSettings(){const a=state.adSettings.adsgram;a.enabled=document.getElementById('adsgramEnabled').value==='1';a.blockId=document.getElementById('adsgramBlockId').value.trim();a.reward=Math.max(0,Number(document.getElementById('adsgramReward').value)||0);a.limit=Math.max(1,Number(document.getElementById('adsgramLimit').value)||20);save();toast('AdsGram settings saved')}
+function testAd(){watchAd()}
+function openAdminLogin(){document.getElementById('loginModal').classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+function adminLogin(){let u=document.getElementById('adminUser').value.trim(),p=document.getElementById('adminPass').value;if(u===state.admin.username&&p===state.admin.password){closeModal('loginModal');document.getElementById('adminModal').classList.add('open');render();toast('Admin login success')}else document.getElementById('loginMsg').textContent='Invalid admin credentials'}
+function changeAdminPassword(){const c=document.getElementById('currentAdminPass').value,n=document.getElementById('newAdminPass').value,v=document.getElementById('confirmAdminPass').value,msg=document.getElementById('passwordMsg');if(c!==state.admin.password)return msg.textContent='Current password is incorrect.';if(n.length<6)return msg.textContent='New password must be at least 6 characters.';if(n!==v)return msg.textContent='New passwords do not match.';state.admin.password=n;save();document.getElementById('currentAdminPass').value='';document.getElementById('newAdminPass').value='';document.getElementById('confirmAdminPass').value='';msg.textContent='Password changed successfully.';toast('Admin password changed')}
+function adminTab(id){document.querySelectorAll('.adminTab').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active')}
+render();
+</script>
+</body>
+</html>
